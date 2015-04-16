@@ -1,0 +1,65 @@
+[options]
+#Should we recurse into sub directories and watch them
+    recursive = true
+
+#Should children inherit the parent's watch flags
+    children_inherit_flags = true
+
+#Should sha hashes be generated
+#Not yet implemented
+    hash_files = true
+
+#Delay when sending updates to servers in minutes
+#Not yet implemented
+    server_update_interval = 5
+
+# Servers:
+# These are the servers that are also running autobd in server mode.
+# If update_servers is defined for an event these servers will recieve
+# an event queue from the client (every update window) which they can use
+# to determine if they need to pull files from the client, or update the
+# structure of their own tree.
+#
+#Not yet implemented
+    servers = ["host1", "host2", "host3"]
+
+# Flags:
+# These are the flags autobd will watch for in this directory. Some
+# (like changed) are condensed versions of multiple inotify flags.
+# e.g the 'changed' flag will be triggered if the IN_CLOSE_WRITE or IN_ATTRIB
+# events occur
+#
+# Here is a list of the events
+# create - File or directory is created
+# changed - File or directory has been written to
+# deleted - File or directory has been deleted
+# moved - File or directory has been moved
+# open - File or directory has been opened
+# closed - File or directory has been closed
+# watch_moved - The root watch directory has been moved
+# unmount - The device the root watch directory, or a child
+#           of the root watch directory resides on has been
+#           unmounted.
+#
+    watch_flags = ["created", "changed", "deleted", "moved", "moved_from",
+    "moved_to", "opened", "closed", "watch_moved", "unmount"]
+
+# Actions:
+# log - Only log the event, no other action is taken
+# update_servers - Add the event to the event queue which is then
+#                  sent to all servers so they can mirror if necessary.
+# panic - immediately close all watches and return error
+# hash - Generate a new checksum
+# nop - No operation is performed, not even logging
+#
+[event_actions]
+    created = ["update_servers", "log"]
+    changed = ["update_servers", "log"]
+    deleted = ["update_servers", "log"]
+    moved = ["update_servers", "log"]
+    moved_from = ["update_servers", "log"]
+    moved_to = ["update_servers", "log"]
+    opened = ["nop"]
+    closed = ["nop"]
+    watch_moved = ["log"]
+    unmount = ["panic"]

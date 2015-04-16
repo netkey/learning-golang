@@ -1,0 +1,10 @@
+/_vendor
+/tmp
+/influxdb.log*
+/_builds
+/vendor
+/own_configs
+/.init_go
+/builds
+/secret
+/configs

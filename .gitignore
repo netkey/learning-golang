@@ -1,0 +1,21 @@
+# Created by .ignore support plugin (hsz.mobi)
+
+bin
+src/github.com
+src/code.google.com
+src/golang.org
+src/gopkg.in
+src/martini
+.idea
+
+pkg
+test
+webexample
+monitor
+delve
+pkg
+public
+
+
+
+
