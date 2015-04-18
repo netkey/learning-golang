@@ -2,106 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/jackc/pgx"
+	//"github.com/jackc/pgx"
+	log "github.com/inconshreveable/log15"
 	"os"
 	"strconv"
 )
 
-var conn *pgx.Conn
-
-func main() {
-	var err error
-	conn, err = pgx.Connect(extractConfig())
+func checkError(err error) error {
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connection to database: %v\n", err)
-		os.Exit(1)
+		panic(err)
 	}
-
-	if len(os.Args) == 1 {
-		printHelp()
-		os.Exit(0)
-	}
-
-	switch os.Args[1] {
-	case "list":
-		err = listTasks()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to list tasks: %v\n", err)
-			os.Exit(1)
-		}
-
-	case "add":
-		err = addTask(os.Args[2])
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to add task: %v\n", err)
-			os.Exit(1)
-		}
-
-	case "update":
-		n, err := strconv.ParseInt(os.Args[2], 10, 32)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable convert task_num into int32: %v\n", err)
-			os.Exit(1)
-		}
-		err = updateTask(int32(n), os.Args[3])
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to update task: %v\n", err)
-			os.Exit(1)
-		}
-
-	case "remove":
-		n, err := strconv.ParseInt(os.Args[2], 10, 32)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable convert task_num into int32: %v\n", err)
-			os.Exit(1)
-		}
-		err = removeTask(int32(n))
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to remove task: %v\n", err)
-			os.Exit(1)
-		}
-
-	default:
-		fmt.Fprintln(os.Stderr, "Invalid command")
-		printHelp()
-		os.Exit(1)
-	}
-}
-
-// --------------------------------------------------------------
-func listTasks() error {
-	rows, _ := conn.Query("select * from tasks limit 4 offset 2")
-
-	for rows.Next() {
-		var id int32
-		var description string
-		err := rows.Scan(&id, &description)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%d. %s\n", id, description)
-	}
-
-	return rows.Err()
-}
-
-func addTask(description string) error {
-	_, err := conn.Exec("insert into tasks(description) values($1)", description)
-	return err
-}
-
-func updateTask(itemNum int32, description string) error {
-	_, err := conn.Exec("update tasks set description=$1 where id=$2", description, itemNum)
-	return err
-}
-
-func removeTask(itemNum int32) error {
-
-	rows, _ := conn.Query("select * from tasks where id=$1", itemNum)
-
-	_, err := conn.Exec("delete from tasks where id=$1", itemNum)
-	return err
-
+	return nil
 }
 
 func printHelp() {
@@ -117,13 +28,92 @@ Example:
 `)
 }
 
-func extractConfig() pgx.ConnConfig {
-	var config pgx.ConnConfig
+//*********************************************************************************
 
-	config.Host = "localhost"
-	config.User = "postgres"
-	config.Password = "postgres"
-	config.Database = "tsingcloud"
+func main() {
+	var err error
+	// init postgres DB connection
 
-	return config
+	//var config pgx.ConnConfig
+
+	dbhost := "localhost"
+	dbuser := "postgres"
+	dbpassword := "postgres"
+	dbname := "tsingcloud"
+
+	var pgdb PostgresDB
+
+	pgdb.InitConfig(dbhost, dbuser, dbpassword, dbname)
+
+	pgdb.InitConnection()
+
+	defer pgdb.Pool.Close()
+
+	/**
+	conn, err = pgx.Connect(extractConfig())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connection to database: %v\n", err)
+		os.Exit(1)
+	}
+
+	*/
+	if len(os.Args) == 1 {
+		printHelp()
+		os.Exit(0)
+	}
+
+	switch os.Args[1] {
+
+	case "test":
+		err = pgdb.Transfer()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "query error: %v\n", err)
+			log.Crit("query error", "error", err)
+			os.Exit(1)
+		}
+
+	case "list":
+		err = pgdb.listTasks()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to list tasks: %v\n", err)
+			log.Crit("Unable to list tasks", "error", err)
+			os.Exit(1)
+		}
+
+	case "add":
+		err = pgdb.addTask(os.Args[2])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to add task: %v\n", err)
+			os.Exit(1)
+		}
+
+	case "update":
+		n, err := strconv.ParseInt(os.Args[2], 10, 32)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable convert task_num into int32: %v\n", err)
+			os.Exit(1)
+		}
+		err = pgdb.updateTask(int32(n), os.Args[3])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to update task: %v\n", err)
+			os.Exit(1)
+		}
+
+	case "remove":
+		n, err := strconv.ParseInt(os.Args[2], 10, 32)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable convert task_num into int32: %v\n", err)
+			os.Exit(1)
+		}
+		err = pgdb.removeTask(int32(n))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to remove task: %v\n", err)
+			os.Exit(1)
+		}
+
+	default:
+		fmt.Fprintln(os.Stderr, "Invalid command")
+		printHelp()
+		os.Exit(1)
+	}
 }

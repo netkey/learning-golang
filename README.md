@@ -61,6 +61,15 @@ https://github.com/blevesearch/bleve    // golang fulltext search engine
 
 https://github.com/oschwald/geoip2-golang
 
+
+https://github.com/jteeuwen/xudp
+
+https://github.com/mgutz/logxi
+
+https://github.com/dgkang/rsa
+
+
+
 ### data struct and sortting
 
 https://github.com/ITCase/sqlalchemy_mptt
