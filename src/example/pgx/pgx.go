@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	//"github.com/jackc/pgx"
+	"example/pgx/task"
 	log "github.com/inconshreveable/log15"
 	"os"
 	"strconv"
@@ -31,57 +32,55 @@ Example:
 //*********************************************************************************
 
 func main() {
+
+	srvlog := log.New("module", "postgres/pgx")
+	srvlog.Info("Program starting", "args", os.Args)
+
 	var err error
 	// init postgres DB connection
-
-	//var config pgx.ConnConfig
-
 	dbhost := "localhost"
 	dbuser := "postgres"
 	dbpassword := "postgres"
 	dbname := "tsingcloud"
 
-	var pgdb PostgresDB
+	srvlog.Warn("database info", log.Ctx{"dbhost": dbhost, "dbuser": dbuser})
 
-	pgdb.InitConfig(dbhost, dbuser, dbpassword, dbname)
+	//var taskPgdb *task.PostgresDB
 
-	pgdb.InitConnection()
+	//taskPgdb =&task.PostgresDB{}
 
-	defer pgdb.Pool.Close()
+	taskPgdb := new(task.PostgresDB)
 
-	/**
-	conn, err = pgx.Connect(extractConfig())
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connection to database: %v\n", err)
-		os.Exit(1)
-	}
+	taskPgdb.InitDb(dbhost, dbuser, dbpassword, dbname)
 
-	*/
+	defer taskPgdb.Pool.Close()
+
 	if len(os.Args) == 1 {
 		printHelp()
+		srvlog.Warn("print help")
 		os.Exit(0)
 	}
 
 	switch os.Args[1] {
 
 	case "test":
-		err = pgdb.Transfer()
+		err = taskPgdb.Transfer()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "query error: %v\n", err)
-			log.Crit("query error", "error", err)
+			srvlog.Warn("query error", "error", err)
 			os.Exit(1)
 		}
 
 	case "list":
-		err = pgdb.listTasks()
+		err = taskPgdb.ListTasks()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Unable to list tasks: %v\n", err)
-			log.Crit("Unable to list tasks", "error", err)
+			srvlog.Warn("Unable to list tasks", "error", err)
 			os.Exit(1)
 		}
 
 	case "add":
-		err = pgdb.addTask(os.Args[2])
+		err = taskPgdb.AddTask(os.Args[2])
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Unable to add task: %v\n", err)
 			os.Exit(1)
@@ -93,7 +92,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Unable convert task_num into int32: %v\n", err)
 			os.Exit(1)
 		}
-		err = pgdb.updateTask(int32(n), os.Args[3])
+		err = taskPgdb.UpdateTask(int32(n), os.Args[3])
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Unable to update task: %v\n", err)
 			os.Exit(1)
@@ -105,7 +104,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Unable convert task_num into int32: %v\n", err)
 			os.Exit(1)
 		}
-		err = pgdb.removeTask(int32(n))
+		err = taskPgdb.RemoveTask(int32(n))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Unable to remove task: %v\n", err)
 			os.Exit(1)
@@ -113,6 +112,7 @@ func main() {
 
 	default:
 		fmt.Fprintln(os.Stderr, "Invalid command")
+		srvlog.Warn("print help")
 		printHelp()
 		os.Exit(1)
 	}

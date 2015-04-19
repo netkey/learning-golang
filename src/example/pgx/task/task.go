@@ -1,4 +1,4 @@
-package main
+package task
 
 import (
 	"fmt"
@@ -17,6 +17,10 @@ type PostgresTx struct {
 	tx *pgx.Tx
 }
 
+func NewPostgresDB() *PostgresDB {
+	return &PostgresDB{}
+}
+// initial all sql
 func (pgdb *PostgresDB) afterConnect(conn *pgx.Conn) (err error) {
 
 	_, err = conn.Prepare("getTask", `
@@ -27,7 +31,7 @@ func (pgdb *PostgresDB) afterConnect(conn *pgx.Conn) (err error) {
 	}
 
 	_, err = conn.Prepare("listTask", `
-    select * from tasks
+    select id,description from tasks order by id asc
   `)
 	if err != nil {
 		return
@@ -78,38 +82,50 @@ func (pgdb *PostgresDB) afterConnect(conn *pgx.Conn) (err error) {
 	return
 }
 
+// connect to postgres DB
+func (pgdb *PostgresDB) InitDb(dbhost, dbuser, dbpassword, dbname string) error {
+
+	pgdb.InitConfig(dbhost, dbuser, dbpassword, dbname)
+	pgdb.InitConnection()
+
+	return nil
+}
+
+// inital PoolConfig of pgx
 func (pgdb *PostgresDB) InitConfig(dbhost, dbuser, dbpassword, dbname string) error {
 
-	connPoolConfig := pgx.ConnPoolConfig{
+	pgdb.poolConfig = pgx.ConnPoolConfig{
 		ConnConfig: pgx.ConnConfig{
 			Host:     dbhost,
 			User:     dbuser,
 			Password: dbpassword,
 			Database: dbname,
-			//Logger:   log.New("module", "pgx"),
+			Logger:   log.New("module", "pgx"),
 		},
 		MaxConnections: 5,
 		AfterConnect:   pgdb.afterConnect,
 	}
 
-	pgdb.poolConfig = connPoolConfig
+	// = connPoolConfig
 	return nil
 }
 
+// initial ConnPool of pgx
 func (pgdb *PostgresDB) InitConnection() error {
 	//var pool *pgx.ConnPool
 	var err error
 
 	pgdb.Pool, err = pgx.NewConnPool(pgdb.poolConfig)
 	if err != nil {
-		log.Crit("Unable to create connection pool", "error", err)
+		log.Info("Unable to create connection pool", "error", err)
 		os.Exit(1)
 	}
 
-	log.Crit("database connect sueecss")
+	log.Info("database connect sueecss")
 	return nil
 }
 
+// a test function for transection
 func (pgdb *PostgresDB) Transfer() error {
 	rows, _ := pgdb.Pool.Query("transfer") // limit 4 offset 2")
 
@@ -126,7 +142,8 @@ func (pgdb *PostgresDB) Transfer() error {
 	return rows.Err()
 }
 
-func (pgdb *PostgresDB) listTasks() error {
+//
+func (pgdb *PostgresDB) ListTasks() error {
 	rows, _ := pgdb.Pool.Query("listTask") // limit 4 offset 2")
 
 	for rows.Next() {
@@ -142,7 +159,7 @@ func (pgdb *PostgresDB) listTasks() error {
 	return rows.Err()
 }
 
-func (pgdb *PostgresDB) addTask(description string) error {
+func (pgdb *PostgresDB) AddTask(description string) error {
 
 	length := len(description)
 	fmt.Println("length of description is: ", length)
@@ -167,7 +184,7 @@ func (pgdb *PostgresDB) addTask(description string) error {
 	return nil
 }
 
-func (pgdb *PostgresDB) updateTask(itemNum int32, description string) error {
+func (pgdb *PostgresDB) UpdateTask(itemNum int32, description string) error {
 
 	tx, err := pgdb.Pool.Begin()
 	checkError(err)
@@ -175,7 +192,7 @@ func (pgdb *PostgresDB) updateTask(itemNum int32, description string) error {
 	// the tx commits successfully, this is a no-op
 	defer tx.Rollback()
 
-	_, err = pgdb.Pool.Exec("updateTask", itemNum, description)
+	_, err = pgdb.Pool.Exec("putTask", itemNum, description)
 
 	checkError(err)
 	err = tx.Commit()
@@ -184,9 +201,16 @@ func (pgdb *PostgresDB) updateTask(itemNum int32, description string) error {
 
 }
 
-func (pgdb *PostgresDB) removeTask(itemNum int32) error {
+func (pgdb *PostgresDB) RemoveTask(itemNum int32) error {
 
 	_, err1 := pgdb.Pool.Exec("deleteTask", itemNum)
 	return err1
 
+}
+
+func checkError(err error) error {
+	if err != nil {
+		panic(err)
+	}
+	return nil
 }

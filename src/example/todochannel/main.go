@@ -4,9 +4,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	//"log"
-	. "example/todochannel/todos"
+	"example/todochannel/todos"
 	"fmt"
-	"github.com/mgutz/logxi/v1"
+	log "github.com/inconshreveable/log15"
 )
 
 const Db = "./todos.json"
@@ -21,20 +21,21 @@ func main() {
 	if _, err := ioutil.ReadFile(Db); err != nil {
 		str := "{}"
 		if err = ioutil.WriteFile(Db, []byte(str), 0644); err != nil {
-			//log.Fatal(err)
+			log.Crit("Unable write to file", "error", err)
 			fmt.Println("error:", err)
 		}
 	}
 
 	// create channel to communicate over
-	jobs := make(chan Job)
+	jobs := make(chan todos.Job)
 
+	log.Crit("start process job")
 	// start watching jobs channel for work
-	go ProcessJobs(jobs, Db)
+	go todos.ProcessJobs(jobs, Db)
 
 	// create dependencies
-	client := &TodoClient{Jobs: jobs}
-	handlers := &TodoHandlers{Client: client}
+	client := &todos.TodoClient{Jobs: jobs}
+	handlers := &todos.TodoHandlers{Client: client}
 
 	// configure routes
 	r := gin.Default()
