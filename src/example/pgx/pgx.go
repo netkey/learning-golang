@@ -1,13 +1,19 @@
 package main
 
 import (
-	"fmt"
-	//"github.com/jackc/pgx"
 	"example/pgx/task"
+	"fmt"
 	log "github.com/inconshreveable/log15"
+	//"github.com/jackc/cli"
+	//"github.com/jackc/pgx"
+	"github.com/vaughan0/go-ini"
+
 	"os"
+	"path/filepath"
 	"strconv"
 )
+
+//*********************************************************************************
 
 func checkError(err error) error {
 	if err != nil {
@@ -27,6 +33,20 @@ Example:
   todo add 'Learn Go'
   todo list
 `)
+}
+
+func loadConfig(path string) (ini.File, error) {
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid config path: %v", err)
+	}
+
+	file, err := ini.LoadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to load config file: %v", err)
+	}
+
+	return file, nil
 }
 
 //*********************************************************************************

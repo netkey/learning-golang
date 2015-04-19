@@ -20,6 +20,7 @@ type PostgresTx struct {
 func NewPostgresDB() *PostgresDB {
 	return &PostgresDB{}
 }
+
 // initial all sql
 func (pgdb *PostgresDB) afterConnect(conn *pgx.Conn) (err error) {
 
