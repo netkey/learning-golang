@@ -5,6 +5,7 @@ import (
 	log "github.com/inconshreveable/log15"
 	"github.com/jackc/pgx"
 	"os"
+	"errors"
 	//"strconv"
 )
 
@@ -204,8 +205,14 @@ func (pgdb *PostgresDB) UpdateTask(itemNum int32, description string) error {
 
 func (pgdb *PostgresDB) RemoveTask(itemNum int32) error {
 
-	_, err1 := pgdb.Pool.Exec("deleteTask", itemNum)
-	return err1
+	commandTag, err := pgdb.Pool.Exec("deleteTask", itemNum)
+
+	if commandTag.RowsAffected() != 1 {
+		log.Info("No row found to delete", "error", err)
+		return errors.New("No row found to delete")
+	}
+
+	return err
 
 }
 
