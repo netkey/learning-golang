@@ -1,12 +1,27 @@
 package main
 
 import (
+
+	// web
+	"github.com/DeanThompson/ginpprof"
 	"github.com/gin-gonic/gin"
-	"io/ioutil"
-	//"log"
-	"example/todochannel/todos"
-	"fmt"
+	//"github.com/olebedev/gin-cache"
+
+	// log
 	log "github.com/inconshreveable/log15"
+
+	// go standard lib
+	"fmt"
+	"io/ioutil"
+	//"time"
+
+	// project module
+	"example/todochannel/todos"
+
+	// debug
+	//"runtime/pprof"
+	//"flag"
+	//"os"
 )
 
 const Db = "./todos.json"
@@ -37,15 +52,22 @@ func main() {
 	client := &todos.TodoClient{Jobs: jobs}
 	handlers := &todos.TodoHandlers{Client: client}
 
+	// start web service
 	// configure routes
-	r := gin.Default()
+	router := gin.Default()
+	// cache ??
+	// action
+	router.POST("/todo", handlers.AddTodo)
+	router.GET("/todo", handlers.GetTodos)
+	router.GET("/todo/:id", handlers.GetTodo)
+	router.PUT("/todo/:id", handlers.SaveTodo)
+	router.DELETE("/todo/:id", handlers.DeleteTodo)
 
-	r.POST("/todo", handlers.AddTodo)
-	r.GET("/todo", handlers.GetTodos)
-	r.GET("/todo/:id", handlers.GetTodo)
-	r.PUT("/todo/:id", handlers.SaveTodo)
-	r.DELETE("/todo/:id", handlers.DeleteTodo)
+	// debug
+	// automatically add routers for net/http/pprof
+	// e.g. /debug/pprof, /debug/pprof/heap, etc.
+	ginpprof.Wrapper(router)
 
 	// start web server
-	r.Run(":8080")
+	router.Run(":8080")
 }

@@ -68,6 +68,15 @@ https://github.com/mgutz/logxi
 
 https://github.com/dgkang/rsa
 
+go get github.com/ugorji/go/codec
+github.com/ugorji/go/codec/codecbench
+
+
+https://github.com/benbjohnson/megajson
+
+https://github.com/stretchr/testify // 测试
+
+https://github.com/nicksnyder/go-i18n
 
 
 ### data struct and sortting
