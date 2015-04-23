@@ -22,17 +22,17 @@ func main() {
 	r := gin.Default()
 	//r.Use(logging.AccessLogger(os.Stdout))
 
-	//r.Static("/grafana", "../monitor/grafana/")
+	r.Static("/reflux", "/Users/qinshen/git/project/reactjs_seed/reflux-store/build")
 	r.Use(static.Serve("/", static.LocalFile("/Users/qinshen/git/project/refluxweb/src/react_reflux/dest", false)))
 	// This handler will match /user/john but will not match neither /user/ or /user
 
 	//comments
-	r.GET("/comments", func(c *gin.Context) {
+	r.GET("/products", func(c *gin.Context) {
 
 		message := []byte(`[
-    {author: "killbill", text: "This is one comment"},
-    {author: "Jordan Walke", text: "This is *another* comment"},
-    {author: "tsigson@me.com", text: "tsingson's comments" }
+    {"id": 1, "title": "iPad 4 Mini", "price": 500.01, "inventory": 2, "image": "../common/assets/ipad-mini.png"},
+    {"id": 2, "title": "H&M T-Shirt White", "price": 10.99, "inventory": 10, "image": "../common/assets/t-shirt.png"},
+    {"id": 3, "title": "Charli XCX - Sucker CD", "price": 19.99, "inventory": 5, "image": "../common/assets/sucker.png"}
 ]`)
 
 		c.String(200, string(message))
